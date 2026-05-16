@@ -1,37 +1,42 @@
-"use strict";
-
-const express = require("express");
-const cors = require("cors");
-const multer = require("multer");
+const express = require('express');
+const cors = require('cors');
+const multer = require('multer'); // Import multer
+require('dotenv').config();
 
 const app = express();
 
-app.use(cors());
-app.use(express.static(process.cwd() + "/public"));
+// Set up multer (storing files in memory is sufficient for this project)
+const upload = multer({ dest: 'uploads/' });
 
-app.get("/", (req, res) => {
-  res.sendFile(process.cwd() + "/views/index.html");
+app.use(cors());
+app.use('/public', express.static(process.cwd() + '/public'));
+
+// Serve the index page
+app.get('/', function (req, res) {
+  res.sendFile(process.cwd() + '/views/index.html');
 });
 
-// IMPORTANT: multer config
-const upload = multer({ storage: multer.memoryStorage() });
+/**
+ * THE SOLUTION ROUTE
+ * 1. 'upload.single('upfile')' is the middleware. 
+ * 2. 'upfile' must match the 'name' attribute in the HTML form.
+ */
+app.post('/api/fileanalyse', upload.single('upfile'), (req, res) => {
+  const file = req.file;
 
-// MAIN API ROUTE (FCC REQUIRED)
-app.post("/api/fileanalyse", upload.single("upfile"), (req, res) => {
-
-  // MUST use req.file
-  if (!req.file) {
-    return res.json({ error: "file not uploaded" });
+  if (!file) {
+    return res.json({ error: "No file uploaded" });
   }
 
-  return res.json({
-    name: req.file.originalname,
-    type: req.file.mimetype,
-    size: req.file.size
+  // Return the required JSON format
+  res.json({
+    name: file.originalname,
+    type: file.mimetype,
+    size: file.size
   });
 });
 
-// START SERVER
-const listener = app.listen(process.env.PORT || 3000, () => {
-  console.log("Your app is listening on port " + listener.address().port);
+const port = process.env.PORT || 3000;
+app.listen(port, function () {
+  console.log('Your app is listening on port ' + port);
 });
